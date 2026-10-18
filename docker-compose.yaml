@@ -1,0 +1,42 @@
+x-spark-common: &spark-common
+  image: apache/spark:3.5.1-python3
+  volumes:
+    - ./src:/opt/project/src
+    - ./data:/opt/project/data
+
+services:
+  spark-master:
+    <<: *spark-common
+    container_name: spark-master
+    hostname: spark-master
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master --host spark-master
+    ports:
+      - "8080:8080"   # UI du master (cluster manager)
+      - "7077:7077"   # port où les workers se connectent
+      - "4040:4040"   # UI de l'application (driver)
+
+  spark-worker-1:
+    <<: *spark-common
+    container_name: spark-worker-1
+    hostname: spark-worker-1
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    environment:
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=2g
+    depends_on:
+      - spark-master
+    ports:
+      - "8081:8081"
+
+  spark-worker-2:
+    <<: *spark-common
+    container_name: spark-worker-2
+    hostname: spark-worker-2
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    environment:
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=2g
+    depends_on:
+      - spark-master
+    ports:
+      - "8082:8081"
